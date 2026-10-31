@@ -35,8 +35,6 @@ def create_report(
     db: Session = Depends(get_db)
 ):
     sighting = crud.create_sighting(db, report)
-    db.commit()
-    db.refresh(sighting)
     return serialize_sighting(sighting)
 
 
@@ -130,8 +128,6 @@ def update_report(
     if sighting is None:
         raise HTTPException(404, "Report not found")
 
-    db.commit()
-    db.refresh(sighting)
     return serialize_sighting(sighting)
 
 
@@ -146,7 +142,7 @@ def delete_report(
     if not deleted:
         raise HTTPException(404, "Report not found")
 
-    db.commit()
+
 
 
 

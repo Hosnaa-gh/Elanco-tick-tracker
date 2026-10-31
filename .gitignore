@@ -226,3 +226,12 @@ tick_tracker.db
 # Additional environment files
 .env.*
 !.env.example
+
+
+# Ignore Node.js dependencies everywhere
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/

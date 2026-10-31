@@ -89,6 +89,7 @@ def get_sightings(
 
 
 
+
 def count_sightings(
     db: Session,
     location: str | None = None,
@@ -96,7 +97,7 @@ def count_sightings(
     start_date: datetime | None = None,
     end_date: datetime | None = None
 ) -> int:
-    """Count sightings matching the filters."""
+    """Count sightings matching the supplied filters."""
 
     statement = select(func.count(Sighting.id))
 
@@ -110,17 +111,18 @@ def count_sightings(
             Sighting.species.ilike(f"%{species}%")
         )
 
-    if start_date:
+    if start_date is not None:
         statement = statement.where(
             Sighting.date >= start_date
         )
 
-    if end_date:
+    if end_date is not None:
         statement = statement.where(
             Sighting.date <= end_date
         )
 
     return db.scalar(statement) or 0
+
 
 
     statement = select(func.count(Sighting.id))
