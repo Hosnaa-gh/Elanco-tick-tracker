@@ -1,10 +1,6 @@
 
 # Elanco Tick Tracker
 
-A full-stack web application for retrieving, processing, visualizing, and analysing tick sightings across the UK.
-
-Developed as part of the **Elanco Software Engineering Technical Assessment**.
-
 ## Project Overview
 
 The Elanco Tick Tracker aims to provide an accessible platform for exploring tick sighting data across the United Kingdom.
