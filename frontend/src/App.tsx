@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 
+
 type Report = {
   id: string
   date: string
@@ -21,6 +22,7 @@ type Report = {
   species: string
   latinName?: string
   created_at?: string
+  source?: 'elanco' | 'user'
 }
 
 type Region = {
@@ -77,6 +79,12 @@ function App() {
   const [error, setError] = useState('')
   const [period, setPeriod] = useState<'month' | 'week'>('month')
   const [search, setSearch] = useState('')
+  const [locationFilter, setLocationFilter] = useState('')
+  const [speciesFilter, setSpeciesFilter] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('')
+  const [startDateFilter, setStartDateFilter] = useState('')
+  const [endDateFilter, setEndDateFilter] = useState('')
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -88,49 +96,123 @@ function App() {
   })
 
   // Fetch real data from FastAPI
-  async function loadData() {
-    setLoading(true)
-    setError('')
+  
+async function loadData() {
+  setLoading(true)
+  setError('')
 
-    try {
-      const [reportsRes, regionsRes, trendsRes] =
-        await Promise.all([
-          fetch(`${API}/reports?limit=100`),
-          fetch(`${API}/insights/by-region`),
-          fetch(`${API}/insights/trends?period=${period}`)
-        ])
+  try {
+    const allReports: Report[] = []
+    const limit = 100
+    let skip = 0
+    let expectedTotal = 0
 
-      if (
-        !reportsRes.ok ||
-        !regionsRes.ok ||
-        !trendsRes.ok
-      ) {
-        throw new Error('Failed to fetch API data.')
+    // Load every page of the combined Elanco + user reports.
+    do {
+      const response = await fetch(
+        `${API}/sightings/combined?skip=${skip}&limit=${limit}`
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load sightings (HTTP ${response.status}).`
+        )
       }
 
-      const [r, g, t] = await Promise.all([
-        reportsRes.json(),
-        regionsRes.json(),
-        trendsRes.json()
-      ])
+      const result = await response.json()
+      const batch: Report[] = Array.isArray(result.data)
+        ? result.data
+        : []
 
-      setReports(Array.isArray(r.data) ? r.data : [])
-      setRegions(Array.isArray(g.data) ? g.data : [])
-      setTrends(Array.isArray(t.data) ? t.data : [])
-      setTotal(Number(r.total) || 0)
-      setConnected(true)
+      expectedTotal = Number(result.total) || 0
+      allReports.push(...batch)
+      skip += batch.length
 
-    } catch (err) {
-      setConnected(false)
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Backend connection failed.'
+      if (batch.length === 0) break
+    } while (skip < expectedTotal)
+
+    // Calculate region counts using the combined dataset.
+    const regionCounts = new Map<string, number>()
+
+    for (const report of allReports) {
+      const location = report.location.trim()
+
+      if (!location) continue
+
+      regionCounts.set(
+        location,
+        (regionCounts.get(location) || 0) + 1
       )
-    } finally {
-      setLoading(false)
     }
+
+    const combinedRegions: Region[] = Array.from(
+      regionCounts,
+      ([region, count]) => ({ region, count })
+    )
+
+    // Calculate weekly or monthly trends from combined data.
+    const trendCounts = new Map<string, number>()
+
+    for (const report of allReports) {
+      const date = new Date(report.date)
+
+      if (Number.isNaN(date.getTime())) continue
+
+      let key: string
+
+      if (period === 'month') {
+        key = date.toISOString().slice(0, 7)
+      } else {
+        // ISO week: Monday is the first day of the week.
+        const utcDate = new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate()
+          )
+        )
+
+        const day = utcDate.getUTCDay() || 7
+        utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day)
+
+        const year = utcDate.getUTCFullYear()
+        const yearStart = new Date(Date.UTC(year, 0, 1))
+        const week = Math.ceil(
+          ((utcDate.getTime() - yearStart.getTime()) /
+            86400000 + 1) / 7
+        )
+
+        key = `${year}-W${String(week).padStart(2, '0')}`
+      }
+
+      trendCounts.set(key, (trendCounts.get(key) || 0) + 1)
+    }
+
+    const combinedTrends: Trend[] = Array.from(
+      trendCounts,
+      ([period, count]) => ({ period, count })
+    ).sort((a, b) =>
+      String(a.period).localeCompare(String(b.period))
+    )
+
+    setReports(allReports)
+    setRegions(combinedRegions)
+    setTrends(combinedTrends)
+    setTotal(expectedTotal)
+    setConnected(true)
+
+  } catch (err) {
+    setConnected(false)
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Backend connection failed.'
+    )
+  } finally {
+    setLoading(false)
   }
+}
+
 
   useEffect(() => {
     void loadData()
@@ -151,11 +233,71 @@ function App() {
     [trends]
   )
 
-  const filteredReports = reports.filter(report =>
-    `${report.location} ${report.species} ${report.latinName ?? ''}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  )
+  
+const availableLocations = useMemo(
+  () => [...new Set(reports.map(report => report.location))]
+    .sort((a, b) => a.localeCompare(b)),
+  [reports]
+)
+
+const availableSpecies = useMemo(
+  () => [...new Set(reports.map(report => report.species))]
+    .sort((a, b) => a.localeCompare(b)),
+  [reports]
+)
+
+const filteredReports = useMemo(() => {
+  return reports.filter(report => {
+    const matchesSearch =
+      `${report.location} ${report.species} ${report.latinName ?? ''}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase())
+
+    const matchesLocation =
+      !locationFilter || report.location === locationFilter
+
+    const matchesSpecies =
+      !speciesFilter || report.species === speciesFilter
+
+    const matchesSource =
+      !sourceFilter || report.source === sourceFilter
+
+    const reportDate = report.date.slice(0, 10)
+
+    const matchesStartDate =
+      !startDateFilter || reportDate >= startDateFilter
+
+    const matchesEndDate =
+      !endDateFilter || reportDate <= endDateFilter
+
+    return (
+      matchesSearch &&
+      matchesLocation &&
+      matchesSpecies &&
+      matchesSource &&
+      matchesStartDate &&
+      matchesEndDate
+    )
+  })
+}, [
+  reports,
+  search,
+  locationFilter,
+  speciesFilter,
+  sourceFilter,
+  startDateFilter,
+  endDateFilter
+])
+
+function clearFilters() {
+  setSearch('')
+  setLocationFilter('')
+  setSpeciesFilter('')
+  setSourceFilter('')
+  setStartDateFilter('')
+  setEndDateFilter('')
+}
+
 
   const speciesCount = new Set(
     reports.map(report => report.species.toLowerCase())
@@ -622,6 +764,81 @@ function App() {
                   placeholder="Search location or species..."
                 />
               </div>
+
+              
+<div className="sighting-filters">
+  <label>
+    Location
+    <select
+      value={locationFilter}
+      onChange={event => setLocationFilter(event.target.value)}
+    >
+      <option value="">All locations</option>
+      {availableLocations.map(location => (
+        <option key={location} value={location}>
+          {location}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    Species
+    <select
+      value={speciesFilter}
+      onChange={event => setSpeciesFilter(event.target.value)}
+    >
+      <option value="">All species</option>
+      {availableSpecies.map(species => (
+        <option key={species} value={species}>
+          {species}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    Source
+    <select
+      value={sourceFilter}
+      onChange={event => setSourceFilter(event.target.value)}
+    >
+      <option value="">All sources</option>
+      <option value="elanco">Elanco</option>
+      <option value="user">User Reports</option>
+    </select>
+  </label>
+
+  <label>
+    From Date
+    <input
+      type="date"
+      value={startDateFilter}
+      max={endDateFilter || undefined}
+      onChange={event => setStartDateFilter(event.target.value)}
+    />
+  </label>
+
+  <label>
+    To Date
+    <input
+      type="date"
+      value={endDateFilter}
+      min={startDateFilter || undefined}
+      onChange={event => setEndDateFilter(event.target.value)}
+    />
+  </label>
+
+  <button
+    type="button"
+    className="secondary-button"
+    onClick={clearFilters}
+  >
+    <X size={16} />
+    Clear Filters
+  </button>
+</div>
+
 
               <ReportTable reports={filteredReports} />
 
