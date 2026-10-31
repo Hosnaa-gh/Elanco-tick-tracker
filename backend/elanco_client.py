@@ -1,19 +1,44 @@
 
+"""Client for retrieving tick sightings from the Elanco API."""
+
 import httpx
 
 ELANCO_API_URL = "https://dev-task.elancoapps.com/data/tick-sightings"
 
+REQUEST_TIMEOUT = 20.0
+
 
 async def fetch_tick_sightings():
-    """Fetch tick sighting records from the Elanco API."""
+    """Fetch and validate tick sightings from the Elanco API."""
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.get(ELANCO_API_URL)
-        response.raise_for_status()
+    try:
+        async with httpx.AsyncClient(
+            timeout=REQUEST_TIMEOUT,
+            follow_redirects=True
+        ) as client:
 
-        data = response.json()
+            response = await client.get(ELANCO_API_URL)
+            response.raise_for_status()
 
-        if not isinstance(data, list):
-            raise ValueError("Unexpected response format from Elanco API")
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ValueError(
+                    "Invalid JSON response from Elanco API"
+                ) from exc
 
-        return data
+            if not isinstance(data, list):
+                raise ValueError(
+                    "Unexpected response format from Elanco API"
+                )
+
+            return data
+
+    except httpx.TimeoutException:
+        raise
+
+    except httpx.HTTPStatusError:
+        raise
+
+    except httpx.RequestError:
+        raise

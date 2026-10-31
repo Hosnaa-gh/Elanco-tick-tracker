@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local databases
+tick_tracker.db
+*.db
+
+# Additional environment files
+.env.*
+!.env.example
