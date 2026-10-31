@@ -1,4 +1,4 @@
-
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,10 @@ from backend.schemas import SightingCreate, SightingResponse
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/reports", tags=["User Reports"])
+insights_router = APIRouter(
+    prefix="/api/insights",
+    tags=["Insights"]
+)
 
 
 
@@ -143,3 +147,25 @@ def delete_report(
         raise HTTPException(404, "Report not found")
 
     db.commit()
+
+
+
+
+@insights_router.get("/by-region")
+def sightings_by_region(db: Session = Depends(get_db)):
+    return {
+        "data": crud.get_sightings_by_region(db)
+    }
+
+
+@insights_router.get("/trends")
+def sighting_trends(
+    period: Literal["week", "month"] = "month",
+    db: Session = Depends(get_db)
+):
+    return {
+        "period": period,
+        "data": crud.get_sighting_trends(db, period)
+    }
+
+

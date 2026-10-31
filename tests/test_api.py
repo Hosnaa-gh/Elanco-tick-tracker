@@ -354,3 +354,65 @@ def test_filtered_pagination(report_client, sample_report):
     assert len(result["data"]) == 1
     assert result["data"][0]["location"] == "London"
     assert result["total"] == 3
+
+
+
+def test_insights_by_region(report_client, sample_report):
+    for location in ["London", "London", "Manchester"]:
+        response = report_client.post(
+            "/api/reports",
+            json={**sample_report, "location": location}
+        )
+        assert response.status_code == 201
+
+    response = report_client.get("/api/insights/by-region")
+
+    assert response.status_code == 200
+
+    data = response.json()["data"]
+    counts = {item["region"]: item["count"] for item in data}
+
+    assert counts == {"London": 2, "Manchester": 1}
+
+
+@pytest.mark.parametrize("period,expected", [
+    ("month", "2026-10"),
+    ("week", "2026-W43"),
+])
+def test_insights_trends(report_client, sample_report, period, expected):
+    response = report_client.post(
+        "/api/reports",
+        json=sample_report
+    )
+    assert response.status_code == 201
+
+    response = report_client.get(
+        "/api/insights/trends",
+        params={"period": period}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["period"] == period
+    assert response.json()["data"] == [
+        {"period": expected, "count": 1}
+    ]
+
+
+def test_insights_invalid_period(report_client):
+    response = report_client.get(
+        "/api/insights/trends",
+        params={"period": "year"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_insights_empty_database(report_client):
+    region_response = report_client.get("/api/insights/by-region")
+    trends_response = report_client.get("/api/insights/trends")
+
+    assert region_response.status_code == 200
+    assert region_response.json()["data"] == []
+
+    assert trends_response.status_code == 200
+    assert trends_response.json()["data"] == []

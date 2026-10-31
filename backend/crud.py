@@ -209,3 +209,51 @@ def delete_sighting(
     except Exception:
         db.rollback()
         raise
+
+
+
+def get_sightings_by_region(db: Session) -> list[dict]:
+    """Count submitted sightings grouped by location."""
+    statement = (
+        select(
+            Sighting.location,
+            func.count(Sighting.id).label("count")
+        )
+        .group_by(Sighting.location)
+        .order_by(func.count(Sighting.id).desc(), Sighting.location)
+    )
+
+    return [
+        {"region": location, "count": count}
+        for location, count in db.execute(statement).all()
+    ]
+
+
+def get_sighting_trends(
+    db: Session,
+    period: str = "month"
+) -> list[dict]:
+    """Group sightings by week or month using their sighting dates."""
+    sightings = db.scalars(
+        select(Sighting).order_by(Sighting.date)
+    ).all()
+
+    counts = {}
+
+    for sighting in sightings:
+        date = sighting.date
+
+        if period == "week":
+            year, week, _ = date.isocalendar()
+            key = f"{year}-W{week:02d}"
+        elif period == "month":
+            key = date.strftime("%Y-%m")
+        else:
+            raise ValueError("Unsupported period")
+
+        counts[key] = counts.get(key, 0) + 1
+
+    return [
+        {"period": key, "count": counts[key]}
+        for key in sorted(counts)
+    ]

@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 
 from backend.data_processing import process_sightings
 from backend.elanco_client import fetch_tick_sightings
-from backend.routes import router as reports_router
+from backend.routes import router as reports_router, insights_router
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ app = FastAPI(
 )
 
 app.include_router(reports_router)
+app.include_router(insights_router)
 
 
 @app.get("/")
