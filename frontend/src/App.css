@@ -1389,3 +1389,29 @@ tbody tr:hover {
   }
 }
 
+
+/* EDUCATION AND SEASONAL ANALYSIS */
+.education-page { display: grid; gap: 24px; }
+.education-hero { padding: 38px; border-radius: 20px; background: linear-gradient(125deg,#103f30,#237a55); color: #fff; }
+.education-hero span { font-size: 11px; letter-spacing: 2px; font-weight: 800; color: #b6e9cb; }
+.education-hero h2 { margin: 12px 0; font-size: clamp(25px,3vw,36px); color: #fff; }
+.education-hero p { max-width: 720px; color: #e0f1e7; line-height: 1.7; }
+.education-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.education-card { padding: 25px; border: 1px solid var(--border); border-radius: 17px; background: #fff; box-shadow: var(--shadow); }
+.education-card h3 { margin: 12px 0 8px; font-size: 18px; }
+.education-card em { color: #08763a; }
+.education-card p { font-size: 14px; line-height: 1.75; color: #52665a; }
+.education-card small { display: block; color: #718077; line-height: 1.6; }
+.education-card-icon,.education-card-number { width: 46px; height: 46px; border-radius: 13px; background: #e7f6ec; color: #07843c; display: grid; place-items: center; font-weight: 800; }
+.education-notice { display: flex; gap: 14px; padding: 20px; border-radius: 14px; background: #e7f6ec; color: #16472b; line-height: 1.7; }
+.education-notice svg { flex-shrink: 0; margin-top: 3px; }
+.education-notice p { margin: 0; font-size: 13px; }
+.education-notice a { color: #07552c; font-weight: 700; }
+.seasonal-filters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 20px 0; }
+.seasonal-filters label { display: grid; gap: 8px; font-size: 13px; font-weight: 700; }
+.seasonal-filters select { min-width: 0; width: 100%; padding: 12px; border: 1px solid #dce5df; border-radius: 10px; background: white; }
+@media(max-width:650px) { .education-grid,.seasonal-filters { grid-template-columns: 1fr; } .education-hero { padding: 24px; } }
+
+/* Official species profile links */
+.education-more { display: inline-flex; align-items: center; margin-top: 16px; padding: 9px 15px; border: 1px solid #b8ddc4; border-radius: 9px; color: #08743b; background: #effaf2; font-weight: 750; text-decoration: none; width: fit-content; }
+.education-more:hover, .education-more:focus-visible { background: #dff3e6; text-decoration: underline; }

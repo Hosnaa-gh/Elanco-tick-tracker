@@ -43,6 +43,8 @@ type Page =
   | 'Insights & Trends'
   | 'Data Export'
   | 'About & Help'
+  | 'Tick Identification'
+  | 'Bite Prevention'
 
 const API = '/api'
 
@@ -52,6 +54,8 @@ const navigation = [
   { name: 'Report Sighting', icon: Plus },
   { name: 'Insights & Trends', icon: BarChart3 },
   { name: 'Data Export', icon: Download },
+  { name: 'Tick Identification', icon: Search },
+  { name: 'Bite Prevention', icon: ShieldCheck },
   { name: 'About & Help', icon: Info }
 ] as const
 
@@ -67,6 +71,43 @@ function formatDate(value: string) {
   })
 }
 
+// Species information is aligned with UKHSA's official UK tick species profiles.
+// All More links lead to the official UKHSA species profile catalogue.
+const SPECIES_PROFILES: Record<string, { name: string; detail: string; note: string }> = {
+  'ixodes ricinus': { name: 'Sheep / Deer Tick', detail: 'The most widespread tick in the UK, found in woodland, heathland and grassland. It feeds on many hosts, including humans.', note: 'A key vector of Lyme disease pathogens in the UK.' },
+  'ixodes hexagonus': { name: 'Hedgehog Tick', detail: 'Commonly associated with hedgehogs and their nests; it may also feed on cats, dogs and occasionally humans.', note: 'Often difficult to distinguish from related Ixodes ticks without expert examination.' },
+  'ixodes canisuga': { name: 'Fox / Badger Tick', detail: 'Widespread in the UK and commonly associated with badgers, foxes and domestic dogs.', note: 'The official UKHSA profile calls this the fox/badger tick.' },
+  'dermacentor reticulatus': { name: 'Ornate Cow Tick', detail: 'Adults have a characteristically patterned dorsal shield. UK populations are more localised, including parts of Wales and south-west England.', note: 'The ornate shield helps distinguish adult ticks.' },
+  'ixodes frontalis': { name: 'Passerine Tick', detail: 'A tick associated especially with passerine birds, which can acquire it while feeding near the ground.', note: 'Occasional human feeding has been recorded.' },
+  'haemaphysalis punctata': { name: 'Red Sheep Tick', detail: 'Found mainly in south-east England and parts of south Wales. Often associated with sheep; immature ticks can feed on birds.', note: 'Can occasionally feed on humans.' },
+  'rhipicephalus sanguineus': { name: 'Brown Dog Tick', detail: 'A dog-associated tick capable of surviving and reproducing indoors. UK reports are associated with importation.', note: 'UKHSA does not consider it established in the UK.' },
+  'ixodes acuminatus': { name: 'Southern Rodent Tick', detail: 'Associated with the burrows of small rodents, with UK records mainly from southern England.', note: 'A specialist wildlife tick.' },
+  'ixodes apronophorus': { name: 'Marsh Tick', detail: 'Associated with wetland habitats and water voles.', note: 'Reported from a limited number of UK wetland sites.' },
+  'ixodes arboricola': { name: 'Tree-hole Tick', detail: 'Associated with birds nesting in tree holes, including tits.', note: 'A specialist bird tick.' },
+  'ixodes caledonicus': { name: 'Northern Bird Tick', detail: 'Associated with cliff- and building-nesting birds, including pigeons and corvids.', note: 'UK records are concentrated in northern England and Scotland.' },
+  'ixodes lividus': { name: 'Sand Martin Tick', detail: 'Lives in sand martin colonies and can remain in nesting sites over winter.', note: 'A specialist bird tick.' },
+  'ixodes rothschildi': { name: 'Puffin Tick', detail: 'Associated with burrow-nesting coastal birds, especially puffins.', note: 'Recorded at a limited number of UK coastal sites.' },
+  'ixodes trianguliceps': { name: 'Shrew Tick', detail: 'Associated with small burrowing mammals and their nests.', note: 'Widely distributed in the UK.' },
+  'ixodes unicavatus': { name: 'Cormorant Tick', detail: 'Associated with cormorants and shags.', note: 'A specialist seabird tick.' },
+  'ixodes uriae': { name: 'Seabird Tick', detail: 'Associated with seabirds around the UK coastline.', note: 'Occasionally recorded feeding on humans.' },
+  'ixodes ventalloi': { name: 'Rabbit Tick', detail: 'An uncommon UK tick associated with rabbits and some of their predators.', note: 'Occasional human feeding has been recorded.' },
+  'ixodes vespertilionis': { name: 'Long-legged Bat Tick', detail: 'A bat-associated tick recognised by its unusually long legs.', note: 'Associated particularly with horseshoe bats.' },
+  'argas reflexus': { name: 'Pigeon Tick', detail: 'A soft tick associated with long-established pigeon populations.', note: 'Uncommon in UK surveillance records.' },
+  'argas vespertilionis': { name: 'Bat Soft Tick', detail: 'A soft tick parasitising bats.', note: 'Identification should be confirmed by a specialist.' },
+  'carios maritimus': { name: 'Marine Soft Tick', detail: 'Associated with seabirds, with UK records from offshore islands.', note: 'A specialist seabird tick.' },
+  'hyalomma marginatum': { name: 'Hyalomma Tick', detail: 'An imported tick sometimes carried into the UK on migratory birds.', note: 'UKHSA reports no evidence of established UK populations.' }
+}
+const OFFICIAL_TICK_PROFILES = 'https://www.gov.uk/guidance/tick-species-profiles'
+const SPECIES_ALIASES: Record<string, string> = {
+  'castor bean tick': 'ixodes ricinus', 'sheep tick': 'ixodes ricinus', 'deer tick': 'ixodes ricinus',
+  'hedgehog tick': 'ixodes hexagonus', 'dog tick': 'ixodes canisuga',
+  'fox tick': 'ixodes canisuga', 'badger tick': 'ixodes canisuga', 'fox/badger tick': 'ixodes canisuga',
+  'ornate cow tick': 'dermacentor reticulatus', 'passerine tick': 'ixodes frontalis',
+  'red sheep tick': 'haemaphysalis punctata', 'brown dog tick': 'rhipicephalus sanguineus',
+  'marsh tick': 'ixodes apronophorus', 'southern rodent tick': 'ixodes acuminatus',
+  'tree-hole tick': 'ixodes arboricola'
+}
+
 function App() {
   const [page, setPage] = useState<Page>('Dashboard')
   const [reports, setReports] = useState<Report[]>([])
@@ -76,6 +117,8 @@ function App() {
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [seasonLocation, setSeasonLocation] = useState('')
+  const [seasonSpecies, setSeasonSpecies] = useState('')
   const [period, setPeriod] = useState<'month' | 'week'>('month')
   const [search, setSearch] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
@@ -254,6 +297,55 @@ const availableSpecies = useMemo(
     .sort((a, b) => a.localeCompare(b)),
   [reports]
 )
+
+const seasonalData = useMemo(() => {
+  const counts = Array.from({ length: 12 }, (_, index) => ({
+    month: new Date(Date.UTC(2024, index, 1)).toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' }),
+    count: 0
+  }))
+  let matched = 0
+  for (const report of reports) {
+    if (seasonLocation && report.location !== seasonLocation) continue
+    if (seasonSpecies && report.species !== seasonSpecies) continue
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(report.date)
+    if (!match) continue
+    const month = Number(match[2]) - 1
+    if (month < 0 || month > 11 || Number(match[3]) < 1 || Number(match[3]) > 31) continue
+    counts[month].count += 1
+    matched += 1
+  }
+  return { counts, matched }
+}, [reports, seasonLocation, seasonSpecies])
+
+  // Preserve every distinct dataset label, even when two labels refer to the same species.
+  const identifiedSpecies = useMemo(() => {
+    const byLabel = new Map<string, { key: string; name: string; latin: string; detail: string; note: string; url: string }>()
+    for (const report of reports) {
+      const raw = report.species.trim()
+      if (!raw) continue
+      const rawKey = raw.toLowerCase()
+      const scientific = (report.latinName ?? '').trim()
+      const scientificKey = scientific.toLowerCase()
+      const profileKey = SPECIES_PROFILES[rawKey]
+        ? rawKey
+        : (SPECIES_ALIASES[rawKey] ?? (SPECIES_PROFILES[scientificKey] ? scientificKey : ''))
+      const profile = SPECIES_PROFILES[profileKey]
+      if (!byLabel.has(rawKey)) {
+        const isCastorAlias = rawKey === 'castor bean tick' || rawKey === 'ixodes ricinus'
+        byLabel.set(rawKey, {
+          key: rawKey,
+          name: raw,
+          latin: profileKey || scientific,
+          detail: profile?.detail ?? 'This label appears in the sightings data, but its identification details have not been verified.',
+          note: isCastorAlias
+            ? 'Castor bean tick and Ixodes ricinus are two labels for the same biological species.'
+            : (profile?.note ?? 'Consult the official tick profiles for identification guidance.'),
+          url: OFFICIAL_TICK_PROFILES
+        })
+      }
+    }
+    return [...byLabel.values()].sort((a, b) => a.name.localeCompare(b.name))
+  }, [reports])
 
 const filteredReports = useMemo(() => {
   return reports.filter(report => {
@@ -1203,6 +1295,90 @@ function clearFilters() {
                 </div>
               </section>
             </div>
+          )}
+
+          {/* Seasonal reports for a selected location */}
+          {page === 'Insights & Trends' && (
+            <section className="panel seasonal-panel" style={{ marginTop: 20 }}>
+              <div className="panel-heading">
+                <h3>Seasonal Sightings by Location</h3>
+                <BarChart3 size={19} />
+              </div>
+              <p className="muted-note">Compare the number of recorded sightings in each calendar month, across all available years.</p>
+              <div className="seasonal-filters">
+                <label>Location
+                  <select value={seasonLocation} onChange={event => setSeasonLocation(event.target.value)}>
+                    <option value="">All locations</option>
+                    {availableLocations.map(location => <option key={location} value={location}>{location}</option>)}
+                  </select>
+                </label>
+                <label>Species
+                  <select value={seasonSpecies} onChange={event => setSeasonSpecies(event.target.value)}>
+                    <option value="">All species</option>
+                    {availableSpecies.map(species => <option key={species} value={species}>{species}</option>)}
+                  </select>
+                </label>
+              </div>
+              <p className="muted-note">{seasonalData.matched.toLocaleString()} matching reports</p>
+              <div className="chart-area large">
+                {seasonalData.matched > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={seasonalData.counts}>
+                      <CartesianGrid strokeDasharray="3 4" vertical={false} />
+                      <XAxis dataKey="month" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip formatter={(value) => [value, 'Recorded sightings']} />
+                      <Area type="monotone" dataKey="count" stroke="#07843c" strokeWidth={3} fill="#c6efd4" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <Empty text="No matching sightings for this selection" />}
+              </div>
+              <p className="muted-note">These are reported sightings grouped by month across all recorded years, not a measure of actual tick abundance, seasonal risk, or a forecast. Reporting effort may vary.</p>
+            </section>
+          )}
+
+          {/* Identification guide */}
+          {page === 'Tick Identification' && (
+            <section className="education-page">
+              <div className="education-hero"><span>FIELD GUIDE</span><h2>Tick Identification Guide</h2><p>Learn the distinguishing features of common UK tick species. Visual identification can be difficult, especially for immature ticks.</p></div>
+              <p className="muted-note">Showing all distinct species labels in the loaded sightings ({identifiedSpecies.length}). Some labels are synonyms for the same biological species.</p>
+              <div className="education-grid">
+                {identifiedSpecies.map(item => (
+                  <article className="education-card" key={item.key}>
+                    <div className="education-card-icon"><Leaf size={24} /></div>
+                    <h3>{item.name}</h3>
+                    {item.latin && <em>{item.latin}</em>}
+                    <p>{item.detail}</p>
+                    <small>{item.note}</small>
+                    <a className="education-more" href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`More about ${item.name} (opens UKHSA website)`}>More ↗</a>
+                  </article>
+                ))}
+                {!identifiedSpecies.length && <p>No species found in the currently loaded sightings. Refresh the data to try again.</p>}
+              </div>
+              <div className="education-notice"><Info size={20} /><p>Do not rely on this guide alone to identify a tick or assess infection risk. Take a clear photograph and seek specialist identification when needed. A tick's appearance changes after feeding.</p></div>
+            </section>
+          )}
+
+          {/* Prevention guidance */}
+          {page === 'Bite Prevention' && (
+            <section className="education-page">
+              <div className="education-hero"><span>OUTDOOR SAFETY</span><h2>Preventing Tick Bites</h2><p>Simple precautions can reduce contact with ticks during outdoor activities.</p></div>
+              <div className="education-grid">
+                {[
+                  ['01', 'Cover exposed skin', 'Wear long trousers and long sleeves where practical. Tucking trousers into socks can help reduce access to skin.'],
+                  ['02', 'Stay on clear paths', 'Avoid brushing against long grass, dense vegetation and low shrubs where ticks may be waiting.'],
+                  ['03', 'Use appropriate repellent', 'Use an insect repellent labelled for ticks, following the product instructions and age restrictions.'],
+                  ['04', 'Check after being outdoors', 'Check clothing, skin, hairline, behind ears, armpits, waist and behind knees. Check children and pets too.'],
+                  ['05', 'Remove ticks promptly', 'Use fine-tipped tweezers or a tick-removal tool close to the skin; pull steadily without squeezing the body. Clean the bite site afterwards.'],
+                  ['06', 'Know when to seek advice', 'If you develop an expanding rash or flu-like symptoms after a possible tick bite, contact a healthcare professional and mention the exposure.']
+                ].map(([number, heading, description]) => (
+                  <article className="education-card" key={number}>
+                    <div className="education-card-number">{number}</div><h3>{heading}</h3><p>{description}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="education-notice"><ShieldCheck size={20} /><p>Never burn a tick or cover it with petroleum jelly or nail polish. This information is general prevention guidance, not medical advice. For UK guidance, see <a href="https://www.nhs.uk/conditions/lyme-disease/" target="_blank" rel="noreferrer">NHS Lyme disease information</a>.</p></div>
+            </section>
           )}
 
           {/* CSV export */}

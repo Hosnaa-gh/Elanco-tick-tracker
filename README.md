@@ -37,6 +37,9 @@ The project demonstrates an end-to-end software engineering workflow: integratin
 | **Data Export** | Download the currently filtered, loaded sightings as a CSV file |
 | **About & Help** | Feature guidance, getting-started instructions, FAQs and data limitations |
 | **Backend** | CRUD endpoints for user reports, combined data endpoint, filters, pagination, error handling and automated tests |
+| **Tick Identification Guide** | Educational profiles covering all seven species labels in the loaded dataset, including identification characteristics, habitats and More links to official tick information. |
+| **Tick Bite Prevention** | Practical guidance on reducing tick exposure, checking for bites and removing attached ticks safely. |
+| **Seasonal Sightings by Location** | Interactive monthly sighting chart with location and species selection, calculated from loaded reports rather than simulated data. |
 
 ### Engineering highlights
 
@@ -48,6 +51,8 @@ The project demonstrates an end-to-end software engineering workflow: integratin
 - **Validation:** Pydantic checks submitted report fields and rejects future sighting dates.
 - **Data access:** server-side filtering and bounded pagination for report and combined-sighting endpoints.
 - **Responsive frontend:** React-based interface with interactive Leaflet maps, Recharts visualisations and Lucide icons.
+- **Data-driven species guide:** Dynamically displays species labels found in the loaded sightings, while distinguishing common names from scientific names.
+- **Seasonal analysis:** Aggregates reported sightings by calendar month for selected locations and species. Report counts are not treated as a direct measure of actual tick abundance.
 
 ## Tech Stack
 
