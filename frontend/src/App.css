@@ -1315,3 +1315,77 @@ tbody tr:hover {
 }
 
 
+
+  /* SIDEBAR HEIGHT & RESPONSIVE FIX*/
+
+
+.sidebar {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbded1 transparent;
+}
+
+.brand {
+  flex-shrink: 0;
+  padding: 20px 20px 22px;
+}
+
+.sidebar nav {
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.nav-link {
+  padding: 12px 17px;
+}
+
+.sidebar-bottom {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 12px 15px 15px;
+}
+
+.nature-art {
+  height: 165px;
+}
+
+.api-badge {
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+/* Shorter laptop screens */
+@media (max-height: 800px) {
+  .brand {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .sidebar nav {
+    gap: 2px;
+  }
+
+  .nav-link {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .nature-art {
+    height: 145px;
+  }
+
+  .sidebar-bottom {
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+
+  .api-badge {
+    margin-top: 8px;
+    padding: 9px 12px;
+  }
+}
+
