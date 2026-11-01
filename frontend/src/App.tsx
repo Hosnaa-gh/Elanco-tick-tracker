@@ -629,16 +629,6 @@ function clearFilters() {
             </p>
           </div>
 
-          <div className="top-actions">
-            <button
-              className="icon-button"
-              aria-label="Refresh data"
-              onClick={() => void loadData()}
-            >
-              <RefreshCw size={19} />
-            </button>
-            <span className="avatar">TT</span>
-          </div>
         </header>
 
         <div className="content">
