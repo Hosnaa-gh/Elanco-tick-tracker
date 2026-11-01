@@ -1,10 +1,9 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   useMap,
 } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -17,6 +16,8 @@ type TickReport = {
   location: string;
   species: string;
   latinName?: string | null;
+  source?: 'elanco' | 'user';
+  created_at?: string;
 };
 
 type TickMapProps = {
@@ -112,6 +113,8 @@ function MapBoundsHandler({
 }
 
 export default function TickMap({ reports }: TickMapProps) {
+      const [selectedReport, setSelectedReport] =
+    useState<TickReport | null>(null);
   const mappedReports = reports
     .map((report) => {
       const location = report.location?.trim().toLowerCase();
@@ -166,34 +169,74 @@ export default function TickMap({ reports }: TickMapProps) {
 
         {mappedReports.map(({ report, coordinates }, index) => (
           <Marker
-            key={report.id ?? index}
-            position={coordinates}
-            icon={tickIcon}
-          >
-            <Popup>
-              <div style={{ minWidth: '170px' }}>
-                <strong>{report.location}</strong>
-
-                <p>
-                  <strong>Species:</strong> {report.species}
-                </p>
-
-                {report.latinName && (
-                  <p>
-                    <strong>Scientific name:</strong>{' '}
-                    <em>{report.latinName}</em>
-                  </p>
-                )}
-
-                <p>
-                  <strong>Date:</strong>{' '}
-                  {new Date(report.date).toLocaleDateString('en-GB')}
-                </p>
-              </div>
-            </Popup>
+              key={report.id ?? index}
+              position={coordinates}
+              icon={tickIcon}
+              eventHandlers={{
+              click: () => setSelectedReport(report),
+               }}
+>
+            
           </Marker>
         ))}
       </MapContainer>
+      {selectedReport && (
+  <div className="sighting-details-panel">
+    <div className="sighting-details-header">
+      <h3>Sighting Details</h3>
+
+      <button
+        type="button"
+        onClick={() => setSelectedReport(null)}
+        aria-label="Close sighting details"
+      >
+        ×
+      </button>
+    </div>
+
+    <div className="sighting-details-body">
+      <p>
+        <strong>Location</strong>
+        <span>{selectedReport.location}</span>
+      </p>
+
+      <p>
+        <strong>Species</strong>
+        <span>{selectedReport.species}</span>
+      </p>
+
+      <p>
+        <strong>Scientific Name</strong>
+        <span>
+          <em>{selectedReport.latinName || 'Not available'}</em>
+        </span>
+      </p>
+
+      <p>
+        <strong>Date</strong>
+        <span>
+          {new Date(selectedReport.date).toLocaleDateString('en-GB')}
+        </span>
+      </p>
+
+      <p>
+        <strong>Source</strong>
+        <span>
+          {selectedReport.source === 'elanco'
+            ? 'Elanco API'
+            : selectedReport.source === 'user'
+              ? 'User Report'
+              : 'Not specified'}
+        </span>
+      </p>
+
+      <p>
+        <strong>Report ID</strong>
+        <span>{selectedReport.id || 'Not available'}</span>
+      </p>
+    </div>
+  </div>
+)}
     </div>
   );
 }

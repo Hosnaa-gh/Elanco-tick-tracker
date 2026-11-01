@@ -14,15 +14,14 @@ import {
 } from 'lucide-react'
 import './App.css'
 
-
 type Report = {
   id: string
   date: string
   location: string
   species: string
-  latinName?: string
+  latinName?: string | null
+  source?: string
   created_at?: string
-  source?: 'elanco' | 'user'
 }
 
 type Region = {
@@ -84,6 +83,16 @@ function App() {
   const [sourceFilter, setSourceFilter] = useState('')
   const [startDateFilter, setStartDateFilter] = useState('')
   const [endDateFilter, setEndDateFilter] = useState('')
+  const [appliedFilters, setAppliedFilters] = useState({
+  species: '',
+  fromDate: '',
+  toDate: '',
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const reportsPerPage = 20;
+  const [mapSpeciesFilter, setMapSpeciesFilter] = useState('')
+  const [mapStartDate, setMapStartDate] = useState('')
+  const [mapEndDate, setMapEndDate] = useState('')
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -289,6 +298,47 @@ const filteredReports = useMemo(() => {
   endDateFilter
 ])
 
+
+const totalPages = Math.max(1, Math.ceil(filteredReports.length / reportsPerPage));
+
+const paginatedReports = filteredReports.slice(
+  (currentPage - 1) * reportsPerPage,
+  currentPage * reportsPerPage
+);
+
+useEffect(() => {
+  setCurrentPage(1);
+}, [search, locationFilter, speciesFilter, sourceFilter, startDateFilter, endDateFilter]);
+
+useEffect(() => {
+  setCurrentPage(page => Math.min(page, totalPages));
+}, [totalPages]);
+
+const mapFilteredReports = useMemo(() => {
+  return reports.filter((report) => {
+    const reportDate = report.date.slice(0, 10);
+
+    const matchesSpecies =
+      !appliedFilters.species ||
+      report.species === appliedFilters.species;
+
+    const matchesStartDate =
+      !appliedFilters.fromDate ||
+      reportDate >= appliedFilters.fromDate;
+
+    const matchesEndDate =
+      !appliedFilters.toDate ||
+      reportDate <= appliedFilters.toDate;
+
+    return (
+      matchesSpecies &&
+      matchesStartDate &&
+      matchesEndDate
+    );
+  });
+}, [reports, appliedFilters]);
+
+
 function clearFilters() {
   setSearch('')
   setLocationFilter('')
@@ -311,54 +361,65 @@ function clearFilters() {
 
   // Submit a new sighting to FastAPI
   async function submitReport(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault()
-    setSaving(true)
-    setError('')
+  event: React.FormEvent<HTMLFormElement>
+) {
+  event.preventDefault()
+  setSaving(true)
+  setError('')
 
-    try {
-      const response = await fetch(`${API}/reports`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          date: new Date(
-            `${form.date}T12:00:00Z`
-          ).toISOString(),
-          location: form.location,
-          species: form.species,
-          latinName: form.latinName
-        })
+  try {
+    const now = new Date()
+
+    const today = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0')
+    ].join('-')
+
+    const reportDate =
+      form.date === today
+        ? now.toISOString()
+        : `${form.date}T00:00:00.000Z`
+
+    const response = await fetch(`${API}/reports`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        date: reportDate,
+        location: form.location.trim(),
+        species: form.species.trim(),
+        latinName: form.latinName.trim()
       })
+    })
 
-      if (!response.ok) {
-        throw new Error(
-          `Unable to save report (HTTP ${response.status}).`
-        )
-      }
-
-      setForm({
-        date: new Date().toISOString().slice(0, 10),
-        location: '',
-        species: '',
-        latinName: ''
-      })
-
-      navigate('Tick Sightings')
-      await loadData()
-
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Report submission failed.'
+    if (!response.ok) {
+      throw new Error(
+        `Unable to save report (HTTP ${response.status}).`
       )
-    } finally {
-      setSaving(false)
     }
+
+    setForm({
+      date: today,
+      location: '',
+      species: '',
+      latinName: ''
+    })
+
+    navigate('Tick Sightings')
+    await loadData()
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Report submission failed.'
+    )
+  } finally {
+    setSaving(false)
   }
+}
 
   // Export loaded sightings to CSV
   function exportCSV() {
@@ -562,6 +623,7 @@ function clearFilters() {
               <div className="dashboard-grid">
 
                 
+
 {/* Regional map */}
 <section className="panel map-panel">
   <div className="panel-heading">
@@ -569,9 +631,92 @@ function clearFilters() {
     <MapPin size={19} />
   </div>
 
+  <div
+    className="sighting-filters"
+    style={{ marginBottom: '16px' }}
+  >
+    <label>
+      Species
+      <select
+        value={mapSpeciesFilter}
+        onChange={event => setMapSpeciesFilter(event.target.value)}
+      >
+        <option value="">All species</option>
+        {availableSpecies.map(species => (
+          <option key={species} value={species}>
+            {species}
+          </option>
+        ))}
+      </select>
+    </label>
+
+    <label>
+      From Date
+      <input
+        type="date"
+        value={mapStartDate}
+        max={mapEndDate || undefined}
+        onChange={event => setMapStartDate(event.target.value)}
+      />
+    </label>
+
+    <label>
+      To Date
+      <input
+        type="date"
+        value={mapEndDate}
+        min={mapStartDate || undefined}
+        onChange={event => setMapEndDate(event.target.value)}
+      />
+    </label>
+
+    <button
+      type="button"
+      className="secondary-button"
+      onClick={() => {
+  setMapSpeciesFilter('')
+  setMapStartDate('')
+  setMapEndDate('')
+  setAppliedFilters({
+    species: '',
+    fromDate: '',
+    toDate: '',
+  })
+}}
+    >
+      <X size={16} />
+      Clear
+    </button>
+    <button
+  type="button"
+  className="apply-filters-btn"
+  onClick={() => {
+    setAppliedFilters({
+      species: mapSpeciesFilter,
+      fromDate: mapStartDate,
+      toDate: mapEndDate,
+    });
+  }}
+>
+  Apply Filters
+</button>
+  </div>
+
+  <p className="muted-note">
+    Showing {mapFilteredReports.length} of {reports.length} sightings
+  </p>
+
   <div className="map-placeholder">
-  <TickMap reports={reports} />
-</div>
+    <TickMap
+      reports={mapFilteredReports.map(report => ({
+        ...report,
+        source:
+          report.source === 'elanco' || report.source === 'user'
+            ? report.source
+            : undefined
+      }))}
+    />
+  </div>
 
   <div className="region-overlay">
     {sortedRegions.slice(0, 5).map(region => (
@@ -586,6 +731,7 @@ function clearFilters() {
     )}
   </div>
 </section>
+
 
                 {/* Trends chart */}
                 <section className="panel trend-panel">
@@ -840,10 +986,43 @@ function clearFilters() {
 </div>
 
 
-              <ReportTable reports={filteredReports} />
+              <ReportTable reports={paginatedReports} />
+
+              <div className="pagination-controls" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginTop: '20px',
+              }}>
+                <span className="muted-note">
+                  {filteredReports.length === 0
+                    ? 'Showing 0 reports'
+                    : `Showing ${(currentPage - 1) * reportsPerPage + 1}–${Math.min(currentPage * reportsPerPage, filteredReports.length)} of ${filteredReports.length} reports`}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                  >
+                    Previous
+                  </button>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
 
               <p className="muted-note">
-                Showing {filteredReports.length} loaded reports.
                 Total in database: {total}.
               </p>
             </section>
@@ -1048,8 +1227,7 @@ function clearFilters() {
               </button>
 
               <p className="muted-note">
-                The API loads up to 100 records per request.
-                Full database export requires pagination.
+                The CSV includes the currently filtered sightings from the loaded dataset.
               </p>
             </section>
           )}
