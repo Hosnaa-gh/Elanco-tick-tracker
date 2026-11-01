@@ -1232,27 +1232,164 @@ function clearFilters() {
             </section>
           )}
 
-          {/* About page */}
-          {page === 'About & Help' && (
-            <section className="panel full-panel">
-              <h3>About Elanco Tick Tracker</h3>
+         
+{/* About & Help page */}
+{page === 'About & Help' && (
+  <section className="about-page">
 
-              <p>
-                A UK tick sighting surveillance dashboard
-                built with React, TypeScript and FastAPI.
-              </p>
+    <div className="about-hero">
+      <span className="about-eyebrow">ABOUT THE PLATFORM</span>
+      <h2>Understanding Tick Activity Across the UK</h2>
+      <p>
+        Elanco Tick Tracker is a tick sighting exploration and
+        reporting platform designed to make recorded observations
+        easier to visualise, understand and analyse.
+      </p>
+      <div className="about-tags">
+        <span>UK Tick Surveillance</span>
+        <span>Interactive Mapping</span>
+        <span>Data Insights</span>
+      </div>
+    </div>
 
-              <p>
-                Submit observations, explore recorded
-                sightings, and analyse regional trends.
-              </p>
+    <div className="about-section-heading">
+      <span className="about-eyebrow">PLATFORM CAPABILITIES</span>
+      <h3>What You Can Do</h3>
+      <p>Explore the tools available throughout the dashboard.</p>
+    </div>
 
-              <p>
-                The dashboard includes an interactive geographic map
-                for exploring tick sightings.
-              </p>
-            </section>
-          )}
+    <div className="about-feature-grid">
+      {[
+        {
+          icon: '◉',
+          title: 'Interactive Map',
+          description: 'Explore recorded tick sightings geographically using an interactive map.'
+        },
+        {
+          icon: '▤',
+          title: 'Tick Sightings',
+          description: 'Browse sighting records and use available filters to narrow the results.'
+        },
+        {
+          icon: '✚',
+          title: 'Submit a Report',
+          description: 'Contribute a new tick observation using the reporting form.'
+        },
+        {
+          icon: '▥',
+          title: 'Regional Insights',
+          description: 'Explore regional patterns and trends in recorded sightings.'
+        },
+        {
+          icon: '↓',
+          title: 'CSV Export',
+          description: 'Export available sighting data as a CSV file for further analysis.'
+        },
+        {
+          icon: '⌕',
+          title: 'Filtering Tools',
+          description: 'Refine the information displayed using the available dashboard filters.'
+        }
+      ].map((feature) => (
+        <article className="about-feature-card" key={feature.title}>
+          <div className="about-feature-icon">{feature.icon}</div>
+          <h4>{feature.title}</h4>
+          <p>{feature.description}</p>
+        </article>
+      ))}
+    </div>
+
+    <div className="about-section-heading">
+      <span className="about-eyebrow">GETTING STARTED</span>
+      <h3>How to Use Tick Tracker</h3>
+      <p>A simple guide to exploring and contributing observations.</p>
+    </div>
+
+    <div className="about-steps">
+      {[
+        ['01', 'Explore the Dashboard', 'Start with the overview and interactive map to understand the recorded sightings.'],
+        ['02', 'Review the Records', 'Visit Tick Sightings to browse observations and narrow your results.'],
+        ['03', 'Submit an Observation', 'Use the reporting form to enter the relevant details of a new sighting.'],
+        ['04', 'Analyse and Export', 'Explore regional insights and download CSV data when needed.']
+      ].map(([number, title, description]) => (
+        <div className="about-step" key={number}>
+          <span className="about-step-number">{number}</span>
+          <div>
+            <h4>{title}</h4>
+            <p>{description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div className="about-section-heading">
+      <span className="about-eyebrow">HELP CENTRE</span>
+      <h3>Frequently Asked Questions</h3>
+      <p>Quick answers to common questions about the platform.</p>
+    </div>
+
+    <div className="about-faq">
+      {[
+        {
+          question: 'What is Elanco Tick Tracker?',
+          answer: 'It is a UK-focused application for exploring, reporting and analysing recorded tick sightings.'
+        },
+        {
+          question: 'How can I submit a tick sighting?',
+          answer: 'Open the reporting section, complete the required observation details and submit the form.'
+        },
+        {
+          question: 'Can I filter the sightings?',
+          answer: 'Yes. The platform includes filtering tools to help you explore the available records.'
+        },
+        {
+          question: 'Can I download the data?',
+          answer: 'Yes. Use the CSV export feature to download available sighting records.'
+        },
+        {
+          question: 'Does the map show every tick in the UK?',
+          answer: 'No. The map represents sightings available in the application dataset. It should not be interpreted as a complete record of tick activity across the UK.'
+        },
+        {
+          question: 'Is this platform a medical diagnosis tool?',
+          answer: 'No. Tick Tracker is intended for data exploration and reporting. It does not provide medical diagnosis or individual risk assessment.'
+        }
+      ].map((item) => (
+        <details className="about-faq-item" key={item.question}>
+          <summary>
+            <span>{item.question}</span>
+            <span className="about-faq-plus">+</span>
+          </summary>
+          <p>{item.answer}</p>
+        </details>
+      ))}
+    </div>
+
+    <div className="about-notice">
+      <div className="about-notice-icon">i</div>
+      <div>
+        <h4>Data & Important Information</h4>
+        <p>
+          Sighting records may be incomplete, unevenly distributed
+          or contributed by users. The number of reports in an area
+          does not necessarily indicate the true tick population or
+          the level of health risk. This platform is for informational
+          and exploratory purposes only.
+        </p>
+      </div>
+    </div>
+
+    <div className="about-footer">
+      <div>
+        <strong>Elanco Tick Tracker</strong>
+        <p>Built with React, TypeScript, FastAPI and Leaflet.</p>
+      </div>
+      <span>Tick Data • Mapping • Insights</span>
+    </div>
+
+  </section>
+)}
+
 
           {loading && (
             <div className="loading-note">
