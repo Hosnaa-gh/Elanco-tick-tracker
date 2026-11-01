@@ -1,15 +1,12 @@
-<div align="center">
+<div align="center">🌿 Elanco Tick Tracker
+Explore · Report · Understand UK Tick Sightings
+A full-stack tick-sighting surveillance and data exploration application
 
-# 🌿 Elanco Tick Tracker
+Built with React, TypeScript, FastAPI and SQLAlchemy as part of the Elanco Software Engineering Technical Assessment.
 
-### Explore · Report · Understand UK Tick Sightings
+Web App (local) · API (local) · Swagger API Docs · GitHub Repository
 
-**A full-stack tick-sighting surveillance and data exploration application**
-
-Built with **React, TypeScript, FastAPI and SQLAlchemy** as part of the **Elanco Software Engineering Technical Assessment**.
-
-[Explore Features](#features) · [Get Started](#getting-started) · [API Reference](#api-reference) · [Testing](#testing)
-
+Explore Features · Get Started · API Reference · Testing
 </div>
 
 ---
