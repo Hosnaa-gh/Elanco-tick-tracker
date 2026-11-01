@@ -11,6 +11,8 @@ Built with **React, TypeScript, FastAPI and SQLAlchemy** as part of the **Elanco
 [Explore Features](#features) · [Get Started](#getting-started) · [API Reference](#api-reference) · [Testing](#testing)
 
 ---
+> **Local development links:** The web app and API links above work only after starting the frontend and backend on your computer. Vite may use a different port (such as `5174`) if `5173` is occupied. No public deployment URL is configured in this README.
+
 ## 🎥 Video Demonstration
 
 A complete video walkthrough of the Elanco Tick Tracker full-stack application is available below.
@@ -18,8 +20,6 @@ A complete video walkthrough of the Elanco Tick Tracker full-stack application i
 The demonstration covers the main application features, interactive data visualisations, tick sighting reporting, and backend API operations.
 
 **[▶ Watch the Full-Stack Technical Assessment Demonstration](https://youtu.be/aqTm5UaIH28)**
-
-> **Local development links:** The web app and API links above work only after starting the frontend and backend on your computer. Vite may use a different port (such as `5174`) if `5173` is occupied. No public deployment URL is configured in this README.
 
 ## Overview
 
