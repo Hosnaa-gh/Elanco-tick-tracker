@@ -1,15 +1,22 @@
-<div align="center">🌿 Elanco Tick Tracker
-Explore · Report · Understand UK Tick Sightings
-A full-stack tick-sighting surveillance and data exploration application
+<div align="center">
 
-Built with React, TypeScript, FastAPI and SQLAlchemy as part of the Elanco Software Engineering Technical Assessment.
+# 🌿 Elanco Tick Tracker
 
-Web App (local) · API (local) · Swagger API Docs · GitHub Repository
+### Explore · Report · Understand UK Tick Sightings
 
-Explore Features · Get Started · API Reference · Testing
+**A full-stack tick-sighting surveillance and data exploration application**
+
+Built with **React, TypeScript, FastAPI and SQLAlchemy** as part of the **Elanco Software Engineering Technical Assessment**.
+
+[Web App (local)](http://localhost:5173) · [API (local)](http://127.0.0.1:8000) · [Swagger API Docs](http://127.0.0.1:8000/docs) · [GitHub Repository](https://github.com/Hosnaa-gh/Elanco-tick-tracker)
+
+[Explore Features](#features) · [Get Started](#getting-started) · [API Reference](#api-reference) · [Testing](#testing)
+
 </div>
 
 ---
+
+> **Local development links:** The web app and API links above work only after starting the frontend and backend on your computer. Vite may use a different port (such as `5174`) if `5173` is occupied. No public deployment URL is configured in this README.
 
 ## Overview
 
